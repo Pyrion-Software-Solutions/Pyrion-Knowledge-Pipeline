@@ -1,0 +1,61 @@
+@page "/settings"
+@inherits WorkbenchPage
+@inject ISettingsStore SettingsStore
+@inject ILmStudioClient LmStudio
+
+<PageTitle>LM Studio Settings · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>LM Studio Settings</h1><p>Connect to a model running on this computer.</p></div></div>
+<Feedback Error="@Error" Notice="@Notice" />
+<div class="settings-layout">
+    <section class="form-panel" aria-labelledby="connection-title">
+        <h2 id="connection-title">Local connection</h2>
+        <fieldset disabled="@Busy">
+            <label for="base-url">API base URL</label><input id="base-url" type="url" @bind="baseUrl" @bind:after="InvalidateConnection" aria-describedby="url-help" />
+            <p id="url-help" class="field-help">Default: http://localhost:1234/v1. Only local loopback addresses are accepted.</p>
+            <button class="button secondary" @onclick="TestAsync">@(Busy ? "Connecting…" : "Test connection")</button>
+            <div class="field-group"><label for="model">Available model</label><select id="model" @bind="modelId">
+                <option value="">Select a chat model</option>
+                @if (models.Count == 0 && !string.IsNullOrWhiteSpace(modelId)) { <option value="@modelId">@modelId (saved; test connection to refresh)</option> }
+                @foreach (var model in models) { <option value="@model.Id">@model.Id</option> }
+            </select><p class="field-help">Test the connection to load models. Choose a chat model; embedding models cannot analyze documents.</p></div>
+            <label for="timeout">Analysis timeout (seconds)</label><input id="timeout" type="number" min="5" max="600" @bind="timeout" />
+            <div class="actions"><button class="button primary" @onclick="SaveAsync">Save settings</button><a href="/preparation">Prepare a document</a></div>
+        </fieldset>
+    </section>
+    <aside class="help-panel"><h2>Before connecting</h2><ol><li>Open LM Studio and load a chat model.</li><li>Start the local server in its Developer tab.</li><li>Test the connection, select the model, and save.</li></ol><p>Schema support depends on the model and runtime. Every response is validated before a draft can be reviewed.</p><p class="connection-state" role="status">@connectionStatus</p></aside>
+</div>
+
+@code {
+    private string baseUrl = "http://localhost:1234/v1";
+    private string? modelId;
+    private int timeout = 180;
+    private IReadOnlyList<LocalModel> models = [];
+    private string connectionStatus = "Connection not tested in this session.";
+
+    protected override Task OnInitializedAsync() => RunAsync(async ct =>
+    {
+        var settings = await SettingsStore.LoadAsync(ct);
+        baseUrl = settings.BaseUrl; modelId = settings.ModelId; timeout = settings.TimeoutSeconds;
+    });
+
+    private void InvalidateConnection() { models = []; connectionStatus = "URL changed. Test the connection again."; }
+    private Task TestAsync() => RunAsync(async ct =>
+    {
+        connectionStatus = "Checking local server…";
+        try
+        {
+            models = await LmStudio.GetModelsAsync(new(baseUrl, modelId, timeout), ct);
+            if (!models.Any(x => x.Id == modelId)) modelId = null;
+            connectionStatus = models.Count == 0 ? "Connected, but no models are available. Load a model in LM Studio and retry." : $"Connected · {models.Count} available model(s).";
+            Notice = connectionStatus;
+        }
+        catch { connectionStatus = "Connection failed. Check the error and retry."; throw; }
+    });
+
+    private Task SaveAsync() => RunAsync(async ct =>
+    {
+        if (string.IsNullOrWhiteSpace(modelId)) throw new PreparationException("Test the connection and select a chat model before saving.");
+        await SettingsStore.SaveAsync(new(baseUrl.Trim().TrimEnd('/'), modelId, timeout), ct);
+        Notice = "Settings saved on this computer. You can now prepare a document.";
+    });
+}

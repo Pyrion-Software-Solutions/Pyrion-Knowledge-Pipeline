@@ -1,0 +1,29 @@
+<div class="document-preview">
+    @foreach (var block in Blocks)
+    {
+        <div class="preview-block" @key="block.SourceReference">
+            <div class="block-reference">@block.SourceReference</div>
+            @if (block.Type == BlockType.Table && block.Rows is not null)
+            {
+                <div class="table-scroll"><table class="source-table"><caption class="sr-only">Extracted source table</caption><tbody>
+                    @foreach (var row in block.Rows)
+                    {
+                        <tr>@foreach (var cell in row.Cells) { <td dir="auto">@cell.Text</td> }</tr>
+                    }
+                </tbody></table></div>
+            }
+            else if (block.Type == BlockType.Heading)
+            {
+                <div role="heading" aria-level="@block.HeadingLevel" class="document-heading level-@block.HeadingLevel" dir="auto">@block.Text</div>
+            }
+            else
+            {
+                <p class="document-text @(block.Type == BlockType.List ? "list-text" : "")" dir="auto">@block.Text</p>
+                @if (block.Type == BlockType.List) { <span class="field-help">List item · source numbering retained in formatting metadata</span> }
+            }
+        </div>
+    }
+</div>
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<DocumentBlock> Blocks { get; set; } = [];
+}

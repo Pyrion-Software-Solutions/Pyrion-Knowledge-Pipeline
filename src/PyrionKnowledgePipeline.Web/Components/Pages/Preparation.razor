@@ -1,0 +1,202 @@
+@page "/preparation"
+@page "/preparation/{Id:guid}"
+@inherits WorkbenchPage
+@inject PreparationWorkflow Workflow
+@inject IDocumentStore Store
+@inject IDocumentParser Parser
+@inject NavigationManager Navigation
+
+<PageTitle>Document Preparation · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>Document Preparation</h1><p>Preserve the source. Review the structure. Approve the result.</p></div><a href="/">All documents</a></div>
+<Feedback Error="@Error" Notice="@Notice" />
+@if (document is null && Id.HasValue)
+{
+    <p role="status">@(Busy ? "Opening saved review…" : "This review could not be opened. Return to the dashboard or try reloading.")</p>
+}
+else if (document is null)
+{
+    <div class="preparation-layout">
+        <section class="form-panel" aria-labelledby="upload-title">
+            <h2 id="upload-title">Upload a source document</h2>
+            <fieldset disabled="@Busy">
+                <div class="upload-area"><label for="document-file">Source DOCX</label><InputFile id="document-file" OnChange="SelectSource" accept=".docx" /><p class="field-help">One DOCX, up to 10 MB. The original is saved unchanged.</p></div>
+                <div class="form-grid"><div><label for="project">Project</label><input id="project" maxlength="200" @bind="project" /></div><div><label for="number">Document number</label><input id="number" maxlength="200" @bind="number" /></div><div class="full-width"><label for="title">Title</label><input id="title" maxlength="200" @bind="title" dir="auto" /></div><div><label for="revision">Revision</label><input id="revision" maxlength="200" @bind="revision" /></div><div><label for="language">Language</label><select id="language" @bind="language"><option value="en">English</option><option value="fa">Persian</option><option value="mixed">Persian &amp; English</option></select></div></div>
+                <div class="field-group"><label for="reference-file">Reference template or rules file (optional)</label><InputFile id="reference-file" OnChange="ReadReferenceAsync" accept=".docx,.txt" /><p class="field-help">DOCX or UTF-8 text; imported as editable structural rules below.</p></div>
+                <label for="rules">Template / rules (optional)</label><textarea id="rules" rows="5" maxlength="20000" @bind="rules" dir="auto"></textarea><p class="field-help">Describe heading and list conventions. Maximum 20,000 characters.</p>
+                <button class="button primary" @onclick="UploadAsync" disabled="@(sourceFile is null)">@(Busy ? "Extracting…" : "Upload & extract DOCX")</button>
+            </fieldset>
+        </section>
+        <aside class="help-panel"><h2>Start with a sample</h2><p>The included engineering document has a styled heading, an unstyled bold title, a list, a table, and Persian text.</p><a href="/samples/engineering-review.docx" download>Download sample DOCX</a><button class="button quiet sample-button" disabled="@Busy" @onclick="FillSampleMetadata">Fill sample metadata</button><hr /><h2>What happens next</h2><ol><li>Inspect the extracted source blocks.</li><li>Request analysis from your selected local model.</li><li>Review every issue and the proposed structure.</li><li>Approve to save and download JSON.</li></ol><p>Only DOCX is available in this milestone.</p></aside>
+    </div>
+}
+else
+{
+    <section class="document-banner" aria-label="Current document"><div><h2 dir="auto">@document.Metadata.Title</h2><p><span dir="auto">@document.Metadata.ProjectId · @document.Metadata.DocumentNumber</span> · Revision @document.Metadata.Revision · @document.Metadata.Language</p><span class="field-help">Source: @document.OriginalFileName</span></div><span class="status @document.Status.ToString().ToLowerInvariant()">@StatusLabel(document.Status)</span></section>
+    @if (document.Extraction.Warnings.Count > 0)
+    {
+        <div class="feedback warning"><strong>Extraction notes — review before approval</strong><ul>@foreach (var warning in document.Extraction.Warnings) { <li>@warning</li> }</ul></div>
+    }
+    @if (document.Status == ReviewStatus.Approved && document.Approved is not null)
+    {
+        <div class="approval-banner"><div><h2>Approved and saved</h2><p>@document.Approved.Approval.ApprovedBy · @document.Approved.Approval.ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</p></div><a class="button primary" href="@($"/documents/{document.Id}/approved.json")" download>Download approved JSON</a></div>
+        <p class="field-help">This revision is final. To prepare another revision, <a href="/preparation">upload a new document</a>.</p>
+    }
+    else
+    {
+        <section class="analysis-panel" aria-labelledby="analysis-title"><h2 id="analysis-title">Local AI analysis</h2><fieldset disabled="@Busy"><label for="analysis-rules">Template / rules</label><textarea id="analysis-rules" rows="3" maxlength="20000" @bind="rules" dir="auto"></textarea><div class="actions"><button class="button primary" @onclick="AnalyzeAsync">@(document.Draft is null ? "Request AI analysis" : "Analyze again with these rules")</button><a href="/settings">LM Studio Settings</a></div></fieldset>
+            @if (Busy) { <div class="analysis-progress" role="status"><span>@analysisStatus</span><button class="button quiet" @onclick="Cancel">Cancel</button></div> }
+            @if (analysisEvents.Count > 0) { <details class="analysis-details"><summary>Analysis status messages</summary><ul>@foreach (var entry in analysisEvents) { <li>@entry</li> }</ul></details> }
+        </section>
+    }
+    @if (document.ReviewNote is not null) { <p class="review-note"><strong>Reviewer note:</strong> @document.ReviewNote</p> }
+    @if (document.Draft is not null)
+    {
+        @if (document.Status == ReviewStatus.AwaitingReview)
+        {
+            <div class="feedback notice"><strong>JSON draft ready for review</strong><p>This draft includes all extracted blocks and extraction notes. It has not been approved.</p><a class="button secondary" href="@($"/documents/{document.Id}/draft.json")" download>Download saved draft JSON</a></div>
+        }
+        <section aria-labelledby="report-title"><div class="section-heading"><h2 id="report-title">Consolidated review report</h2><span>@document.Draft.Proposal.Issues.Count review entries · @document.Extraction.Blocks.Count blocks</span></div><p class="field-help">Analysis model: @document.Draft.ModelId.</p>
+        @if (document.Status == ReviewStatus.Approved) { <p class="field-help">This report records the reviewed structure and any saved reviewer changes. The approved document is final.</p> }
+        else if (document.Status == ReviewStatus.Rejected) { <p class="field-help">This proposal was rejected. Run analysis again to create a new reviewable draft.</p> }
+        else { <p class="field-help">These are proposed classifications and review notes. Inspect the preview before approving.</p> }
+        @if (document.Draft.Proposal.Issues.Count == 0) { <div class="empty-report">The model reported no structural issues. Inspect the preview before approving.</div> }
+        @foreach (var issue in document.Draft.Proposal.Issues)
+        {
+            var original = document.Extraction.Blocks.First(x => x.SourceReference == issue.SourceReference);
+            <article class="issue-row"><div><span class="block-reference">@issue.SourceReference</span><p class="source-excerpt" dir="auto">@(original.Type == BlockType.Table ? "[Table — see preview]" : original.Text)</p></div><div><h3>@Classification(original.Type, original.HeadingLevel) → @Classification(issue.SuggestedType, issue.SuggestedHeadingLevel)</h3><p dir="auto">@issue.Reason</p></div></article>
+        }
+        </section>
+        @if (document.Status == ReviewStatus.AwaitingReview)
+        {
+            <details class="manual-revisions"><summary>Revise classifications manually</summary><p>Wording and table content remain fixed. Save your edits to create a new draft for approval.</p><fieldset disabled="@Busy">
+            @foreach (var edit in edits)
+            {
+                <div class="classification-row"><span class="block-reference">@edit.SourceReference</span><select aria-label="@($"Classification for {edit.SourceReference}")" @bind="edit.Type" disabled="@(edit.OriginalType == BlockType.Table)" @bind:after="MarkEdited">
+                    @if (edit.OriginalType == BlockType.Table) { <option value="@BlockType.Table">Table</option> }
+                    else { <option value="@BlockType.Paragraph">Paragraph</option><option value="@BlockType.Heading">Heading</option><option value="@BlockType.List">List</option> }
+                </select>@if (edit.Type == BlockType.Heading) { <input type="number" min="1" max="6" @bind="edit.Level" @bind:after="MarkEdited" aria-label="@($"Heading level for {edit.SourceReference}")" /> }</div>
+            }
+            <label for="revision-note">Revision reason</label><input id="revision-note" @bind="reviewNote" maxlength="1800" /><button class="button secondary" @onclick="SaveRevisionAsync" disabled="@(!hasEdits)">Save revised draft</button></fieldset></details>
+        }
+        <section class="preview-section" aria-labelledby="preview-title"><div class="section-heading"><h2 id="preview-title">@(document.Status == ReviewStatus.Approved ? "Approved document" : "Proposed normalized document")</h2><a href="@(document.Status == ReviewStatus.Approved ? "/schemas/normalized-document-v1.schema.json" : "/schemas/normalized-draft-v1.schema.json")" target="_blank" rel="noopener">JSON schema v@(Preview().SchemaVersion)</a></div><DocumentPreview Blocks="@Preview().Blocks" /><details class="json-preview"><summary>Inspect normalized JSON</summary><pre>@System.Text.Json.JsonSerializer.Serialize(Preview(), DocumentJson.Options)</pre></details></section>
+        @if (document.Status == ReviewStatus.AwaitingReview)
+        {
+            <section class="review-actions" aria-labelledby="decision-title"><h2 id="decision-title">Your review decision</h2><fieldset disabled="@Busy"><div class="form-grid"><div><label for="reviewer">Reviewer name</label><input id="reviewer" @bind="reviewer" maxlength="200" /></div><div><label for="reject-note">Review note (optional for rejection)</label><input id="reject-note" @bind="reviewNote" maxlength="1800" /></div></div><label class="checkbox-label"><input type="checkbox" @bind="acknowledged" /> I have reviewed the report, proposed structure, and extraction notes.</label><div class="actions"><button class="button primary" @onclick="ApproveAsync" disabled="@(!acknowledged || hasEdits)">Approve & save JSON</button><button class="button danger" @onclick="RejectAsync">Reject draft</button></div>@if (hasEdits) { <p class="field-help">Save your manual revisions before approving.</p> }</fieldset></section>
+        }
+        else if (document.Status == ReviewStatus.Rejected) { <div class="feedback warning">This draft was rejected. Revise the rules above and run analysis again to prepare a new draft.</div> }
+    }
+    else
+    {
+        <section class="preview-section"><h2>Extracted source · @document.Extraction.Blocks.Count blocks</h2><p>Inspect the extraction before requesting analysis.</p><DocumentPreview Blocks="@document.Extraction.Blocks" /></section>
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+    private PreparedDocument? document;
+    private IBrowserFile? sourceFile;
+    private string project = "", number = "", title = "", revision = "", language = "en", rules = "";
+    private string reviewer = "", reviewNote = "", analysisStatus = "Working…";
+    private bool acknowledged, hasEdits;
+    private List<ClassificationEdit> edits = [];
+    private readonly List<string> analysisEvents = [];
+
+    protected override Task OnParametersSetAsync() => RunAsync(async ct =>
+    {
+        document = Id.HasValue ? await Store.GetAsync(Id.Value, ct) : null;
+        if (Id.HasValue && document is null) throw new PreparationException("Document not found. Return to the dashboard.");
+        rules = document?.Rules ?? "";
+        ResetReview();
+    });
+
+    private void SelectSource(InputFileChangeEventArgs e) { sourceFile = e.File; Error = null; }
+    private void FillSampleMetadata()
+    {
+        project = "Sample Engineering"; number = "ENG-001"; title = "Pump inspection procedure"; revision = "A"; language = "mixed";
+        rules = "Use Heading 1 for top-level section titles and Heading 2 for subsections. The bold 18pt 'Inspection requirements' paragraph is a top-level section title. Keep numbered steps as lists. Preserve every technical value and all Persian and English wording.";
+    }
+
+    private Task ReadReferenceAsync(InputFileChangeEventArgs e) => RunAsync(async ct =>
+    {
+        var file = e.File;
+        var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (extension is not (".txt" or ".docx")) throw new PreparationException("Reference files must be DOCX or UTF-8 TXT.");
+        var limit = extension == ".txt" ? 128 * 1024 : PreparationWorkflow.MaxUploadBytes;
+        if (file.Size > limit) throw new PreparationException("The reference file is too large. Use TXT up to 128 KB or DOCX up to 10 MB.");
+        await using var input = file.OpenReadStream(limit, ct);
+        string imported;
+        if (extension == ".txt")
+        {
+            using var reader = new StreamReader(input, new System.Text.UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
+            imported = await reader.ReadToEndAsync(ct);
+        }
+        else
+        {
+            using var buffer = new MemoryStream();
+            await input.CopyToAsync(buffer, ct); buffer.Position = 0;
+            var extraction = await Parser.ExtractAsync(buffer, ct);
+            imported = string.Join("\n", extraction.Blocks.Select(x => x.Rows is null ? x.Text : string.Join("\n", x.Rows.Select(r => string.Join("\t", r.Cells.Select(c => c.Text))))));
+            if (extraction.Warnings.Count > 0) Notice = "Reference imported with extraction notes: " + string.Join(" ", extraction.Warnings);
+        }
+        if (imported.Length > PreparationWorkflow.MaxRulesCharacters) throw new PreparationException("The reference exceeds 20,000 characters. Use a shorter rules file.");
+        rules = imported;
+        Notice ??= "Reference imported. Review or edit the rules before analysis.";
+    });
+
+    private Task UploadAsync() => RunAsync(async ct =>
+    {
+        if (sourceFile is null) throw new PreparationException("Choose a DOCX file first.");
+        if (sourceFile.Size > PreparationWorkflow.MaxUploadBytes) throw new PreparationException("The source file exceeds 10 MB.");
+        await using var stream = sourceFile.OpenReadStream(PreparationWorkflow.MaxUploadBytes, ct);
+        var uploaded = await Workflow.UploadAsync(sourceFile.Name, stream, new(project, number, title, revision, language), rules, ct);
+        document = uploaded;
+        ResetReview();
+        Navigation.NavigateTo($"/preparation/{uploaded.Id}");
+    });
+
+    private Task AnalyzeAsync() => RunAsync(async ct =>
+    {
+        analysisEvents.Clear(); analysisStatus = "Checking selected model…";
+        document = await Workflow.AnalyzeAsync(document!.Id, rules, message =>
+        {
+            analysisStatus = message; analysisEvents.Add(message); _ = InvokeAsync(StateHasChanged);
+        }, ct);
+        ResetReview();
+        Notice = "Analysis complete. Review the report and preview before deciding.";
+    });
+
+    private Task SaveRevisionAsync() => RunAsync(async ct =>
+    {
+        document = await Workflow.ReviseAsync(document!.Id, document.Draft!.Id,
+            edits.Select(x => new ProposedBlock(x.SourceReference, x.Type, x.Type == BlockType.Heading ? x.Level : null)).ToList(), reviewNote, ct);
+        ResetReview(); Notice = "Revised draft saved. Review the updated preview before approving.";
+    });
+    private Task RejectAsync() => RunAsync(async ct =>
+    {
+        document = await Workflow.RejectAsync(document!.Id, document.Draft!.Id, reviewNote, ct);
+        ResetReview(); Notice = "Draft rejected. Update rules and analyze again when ready.";
+    });
+    private Task ApproveAsync() => RunAsync(async ct =>
+    {
+        if (!acknowledged || hasEdits) throw new PreparationException("Review the saved draft and confirm the checkbox before approval.");
+        document = await Workflow.ApproveAsync(document!.Id, document.Draft!.Id, reviewer, ct);
+        ResetReview(); Notice = "Approved JSON saved locally. It is ready to download.";
+    });
+    private void MarkEdited() { hasEdits = true; acknowledged = false; }
+    private void ResetReview()
+    {
+        acknowledged = hasEdits = false;
+        reviewNote = "";
+        edits = document?.Draft?.Proposal.Blocks.Select((x, i) => new ClassificationEdit
+        { SourceReference = x.SourceReference, Type = x.Type, OriginalType = document.Extraction.Blocks[i].Type, Level = x.HeadingLevel ?? 1 }).ToList() ?? [];
+    }
+    private NormalizedDocument Preview() => document!.Approved ?? PreparationWorkflow.Preview(document);
+    private static string Classification(BlockType type, int? level) => type == BlockType.Heading ? $"Heading {level}" : type.ToString();
+    private sealed class ClassificationEdit
+    {
+        public string SourceReference { get; set; } = "";
+        public BlockType Type { get; set; }
+        public BlockType OriginalType { get; set; }
+        public int Level { get; set; } = 1;
+    }
+}

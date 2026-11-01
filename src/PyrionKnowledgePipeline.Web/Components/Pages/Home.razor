@@ -1,0 +1,34 @@
+@page "/"
+@inherits WorkbenchPage
+@inject IDocumentStore Store
+
+<PageTitle>Dashboard · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>Your document workspace</h1><p>Prepare structured knowledge, one reviewed document at a time.</p></div><a class="button primary" href="/preparation">Prepare a document</a></div>
+<Feedback Error="@Error" Notice="@Notice" />
+<section class="intro-panel" aria-labelledby="journey-title">
+    <div><h2 id="journey-title">From source to approved structure</h2><p>Extract a DOCX, review local AI suggestions, and save the structure you approve. Original wording stays intact.</p><a href="/settings">Configure LM Studio</a></div>
+    <ol class="journey"><li>Upload &amp; extract</li><li>Analyze locally</li><li>Review &amp; approve</li><li>Download JSON</li></ol>
+</section>
+<section aria-labelledby="documents-title">
+    <div class="section-heading"><h2 id="documents-title">Saved documents</h2><button class="button quiet" disabled="@Busy" @onclick="RefreshAsync">Refresh</button></div>
+    @if (Busy) { <p role="status">Loading saved reviews…</p> }
+    else if (documents.Count == 0)
+    {
+        <div class="empty-state"><h3>Your first document starts here</h3><p>Use your own DOCX or the included engineering sample. All reviews and approvals are saved locally.</p><a href="/samples/engineering-review.docx" download>Download sample DOCX</a></div>
+    }
+    else
+    {
+        <div class="table-scroll"><table class="document-table"><caption class="sr-only">Saved documents and their current review status</caption><thead><tr><th>Document</th><th>Number / revision</th><th>Status</th><th><span class="sr-only">Open document</span></th></tr></thead><tbody>
+        @foreach (var d in documents)
+        {
+            <tr><td><strong dir="auto">@d.Title</strong><span class="cell-detail">@d.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span></td><td><span dir="auto">@d.DocumentNumber</span><span class="cell-detail">Revision @d.Revision</span></td><td><span class="status @d.Status.ToString().ToLowerInvariant()">@StatusLabel(d.Status)</span></td><td><a href="@($"/preparation/{d.Id}")">Open review</a></td></tr>
+        }
+        </tbody></table></div>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<DocumentSummary> documents = [];
+    protected override Task OnInitializedAsync() => RefreshAsync();
+    private Task RefreshAsync() => RunAsync(async ct => documents = await Store.ListAsync(ct));
+}

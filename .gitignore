@@ -1,0 +1,76 @@
+# .NET build, publish, and package output
+**/[Bb]in/
+**/[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+publish/
+/packages/
+*.nupkg
+*.snupkg
+
+# Visual Studio and Rider user settings
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.sln.iml
+
+# Test results and coverage reports
+TestResults/
+coverage/
+.dotCover/
+.coverlet/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.xml
+coverage*.json
+
+# Local application storage and private uploads/exports
+# Default storage is outside the repository in LOCALAPPDATA.
+App_Data/
+/data/
+/local-data/
+/documents/
+/uploads/
+/exports/
+/settings.json
+.instance.lock
+*.review-draft.json
+*.analysis-report.json
+*-review-draft.json
+*-approved.json
+
+# Local environment overrides and development certificates
+.env
+.env.*
+!.env.example
+!.env.sample
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.local.json
+appsettings.*.local.json
+*.pfx
+*.p12
+
+# Logs, temporary files, and editor/OS caches
+logs/
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+.impeccable/
+
+# Do not blanket-ignore JSON or DOCX: schemas, shared appsettings,
+# launch settings, and the intentional sample document belong in Git.

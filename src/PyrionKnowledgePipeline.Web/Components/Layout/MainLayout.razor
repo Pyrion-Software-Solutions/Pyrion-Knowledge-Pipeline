@@ -1,0 +1,22 @@
+@inherits LayoutComponentBase
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Pyrion dashboard">
+            <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true"><path d="M6 26V6h12a7 7 0 0 1 0 14H6m7-7h5" fill="none" stroke="currentColor" stroke-width="3" /></svg>
+            <span>Pyrion<span class="brand-sub">Knowledge Pipeline</span></span>
+        </a>
+        <nav aria-label="Main navigation">
+            <NavLink href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink href="/preparation">Document Preparation</NavLink>
+            <NavLink href="/settings">LM Studio Settings</NavLink>
+        </nav>
+        <div class="local-note"><span class="local-dot"></span> Local workspace<p>Documents stay on this computer.<br />Every final change needs your approval.</p></div>
+    </aside>
+    <main id="main" class="workspace">
+        <header class="workspace-bar"><span>Document preparation</span><span>Initial milestone · DOCX</span></header>
+        <div class="page-content">@Body</div>
+    </main>
+</div>
+<div id="blazor-error-ui" data-nosnippet role="alert">The workspace connection was interrupted. <a href="">Reload this page</a> to reopen your saved review.</div>
