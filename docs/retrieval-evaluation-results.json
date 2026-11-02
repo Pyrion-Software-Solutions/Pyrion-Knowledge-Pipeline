@@ -1,0 +1,513 @@
+{
+  "scope": "Real local embeddings \u002B exact in-memory cosine; PostgreSQL latency and end-to-end UI are not measured by this evaluation.",
+  "model": {
+    "fingerprint": "235c61c259017ae1af4b8d171a85ba9f2180a42785584e1c72c070e625e78147",
+    "modelId": "text-embedding-nomic-embed-text-v1.5",
+    "modelVersion": "local-nomic-v1.5-evaluation-2026-11-03",
+    "dimensions": 768,
+    "configurationFingerprint": "4b3736d1fc6bf9268c50d9259a3a2df5e1050ace5c8b10f78396800eb87e0560",
+    "probeHash": "2d7901b3b7e11d6e2ea2f01b0bb12eef36df0242eac000f0bd057d41794ea0e7",
+    "metric": "cosine"
+  },
+  "chunking": {
+    "targetTokens": 500,
+    "maximumTokens": 750,
+    "overlapTokens": 40,
+    "tableHeaderRows": null,
+    "fingerprint": "b240fdd37e8ff1ce13e4f083d91ca02a713c2d91f2440f3acd19163964dcaea0"
+  },
+  "candidateChunkCounts": {
+    "300": 15,
+    "500": 15,
+    "1000": 15
+  },
+  "recallAt5": 1,
+  "results": [
+    {
+      "id": "en-paraphrase",
+      "query": "How is the pump pressure proof test witnessed?",
+      "mode": "semantic",
+      "project": "Synthetic-A",
+      "revision": null,
+      "expectedSources": [
+        "a-en"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 49.7424,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "a-en",
+          "ordinal": 1,
+          "score": 0.7355141203709644,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 0.6203227886897222,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 2,
+          "score": 0.5485967994744799,
+          "blocks": [
+            "body/2/row/0/cell/0",
+            "body/2/row/0/cell/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 0,
+          "score": 0.5209361120135052,
+          "blocks": [
+            "body/0"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 0,
+          "score": 0.4810695952958741,
+          "blocks": [
+            "body/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fa-paraphrase",
+      "query": "\u0628\u0627\u0632\u0631\u0633 \u0647\u0646\u06AF\u0627\u0645 \u0622\u0632\u0645\u0627\u06CC\u0634 \u0641\u0634\u0627\u0631 \u067E\u0645\u067E \u0686\u0647 \u0686\u06CC\u0632\u06CC \u0631\u0627 \u062B\u0628\u062A \u0645\u06CC\u200C\u06A9\u0646\u062F\u061F",
+      "mode": "semantic",
+      "project": "Synthetic-A",
+      "revision": null,
+      "expectedSources": [
+        "a-fa"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 101.646,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "a-fa",
+          "ordinal": 1,
+          "score": 0.7997229612884693,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 3,
+          "score": 0.7945568155361198,
+          "blocks": [
+            "body/3"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 2,
+          "score": 0.7552321571194293,
+          "blocks": [
+            "body/2"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 0,
+          "score": 0.7104928573169061,
+          "blocks": [
+            "body/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fa-lubrication",
+      "query": "\u0642\u0628\u0644 \u0627\u0632 \u0634\u0631\u0648\u0639 \u06A9\u0627\u0631 \u062F\u0633\u062A\u06AF\u0627\u0647\u060C \u0631\u0648\u063A\u0646 \u06A9\u062F\u0627\u0645 \u0628\u062E\u0634 \u06A9\u0646\u062A\u0631\u0644 \u0645\u06CC\u200C\u0634\u0648\u062F\u061F",
+      "mode": "semantic",
+      "project": "Synthetic-A",
+      "revision": null,
+      "expectedSources": [
+        "a-fa"
+      ],
+      "expectedBlocks": [
+        "body/3"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 99.0419,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "a-fa",
+          "ordinal": 3,
+          "score": 0.7310663401066907,
+          "blocks": [
+            "body/3"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 1,
+          "score": 0.6893402187799947,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 2,
+          "score": 0.6664836783679079,
+          "blocks": [
+            "body/2"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 0,
+          "score": 0.6177714173970462,
+          "blocks": [
+            "body/0"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 0.48665281033905394,
+          "blocks": [
+            "body/1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "project-b-context",
+      "query": "pump pressure acceptance requirement",
+      "mode": "semantic",
+      "project": "Synthetic-B",
+      "revision": "01",
+      "expectedSources": [
+        "b-en"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 37.9504,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "b-en",
+          "ordinal": 1,
+          "score": 0.8018346293075792,
+          "blocks": [
+            "body/1",
+            "body/2"
+          ]
+        },
+        {
+          "source": "b-en",
+          "ordinal": 0,
+          "score": 0.6456711750400426,
+          "blocks": [
+            "body/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-fact",
+      "query": "What is the specified pump design temperature?",
+      "mode": "semantic",
+      "project": "Synthetic-A",
+      "revision": null,
+      "expectedSources": [
+        "a-en"
+      ],
+      "expectedBlocks": [
+        "body/2"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 39.8804,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "a-en",
+          "ordinal": 2,
+          "score": 0.7275291233634485,
+          "blocks": [
+            "body/2/row/0/cell/0",
+            "body/2/row/0/cell/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 1,
+          "score": 0.6595966043704252,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 0.5832096345909291,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 0,
+          "score": 0.5051147973214246,
+          "blocks": [
+            "body/0"
+          ]
+        },
+        {
+          "source": "a-fa",
+          "ordinal": 3,
+          "score": 0.47631338495716946,
+          "blocks": [
+            "body/3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "heading-target",
+      "query": "electrical checks before energizing the motor",
+      "mode": "semantic",
+      "project": null,
+      "revision": null,
+      "expectedSources": [
+        "electrical"
+      ],
+      "expectedBlocks": [
+        "body/0",
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 38.0007,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 0.8258676719915696,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 0,
+          "score": 0.6932621520556533,
+          "blocks": [
+            "body/0"
+          ]
+        },
+        {
+          "source": "b-en",
+          "ordinal": 1,
+          "score": 0.6162261222656464,
+          "blocks": [
+            "body/1",
+            "body/2"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 1,
+          "score": 0.5766417539698263,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 2,
+          "score": 0.5085039654770716,
+          "blocks": [
+            "body/2/row/0/cell/0",
+            "body/2/row/0/cell/1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "document-number",
+      "query": "SYN-PUMP-001",
+      "mode": "literal",
+      "project": "Synthetic-A",
+      "revision": null,
+      "expectedSources": [
+        "a-en"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 1.1101,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "a-en",
+          "ordinal": 0,
+          "score": 1,
+          "blocks": [
+            "body/0"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 1,
+          "score": 1,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 2,
+          "score": 1,
+          "blocks": [
+            "body/2/row/0/cell/0",
+            "body/2/row/0/cell/1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clause-code",
+      "query": "EL-07",
+      "mode": "literal",
+      "project": null,
+      "revision": null,
+      "expectedSources": [
+        "electrical"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 0.1504,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 1,
+          "blocks": [
+            "body/1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fa-literal",
+      "query": "\u06F1\u06F8 \u0628\u0627\u0631",
+      "mode": "literal",
+      "project": "Synthetic-B",
+      "revision": null,
+      "expectedSources": [
+        "b-fa"
+      ],
+      "expectedBlocks": [
+        "body/1"
+      ],
+      "recallAt5": 1,
+      "latencyMilliseconds": 0.0961,
+      "unsupportedReturnedChunks": null,
+      "returned": [
+        {
+          "source": "b-fa",
+          "ordinal": 1,
+          "score": 1,
+          "blocks": [
+            "body/1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unsupported-semantic",
+      "query": "What is the radiation shielding thickness for the reactor?",
+      "mode": "semantic",
+      "project": null,
+      "revision": null,
+      "expectedSources": [],
+      "expectedBlocks": [],
+      "recallAt5": null,
+      "latencyMilliseconds": 38.4116,
+      "unsupportedReturnedChunks": 5,
+      "returned": [
+        {
+          "source": "b-en",
+          "ordinal": 1,
+          "score": 0.6218223726163047,
+          "blocks": [
+            "body/1",
+            "body/2"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 1,
+          "score": 0.6097606156901935,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 2,
+          "score": 0.5590058606879957,
+          "blocks": [
+            "body/2/row/0/cell/0",
+            "body/2/row/0/cell/1"
+          ]
+        },
+        {
+          "source": "electrical",
+          "ordinal": 1,
+          "score": 0.5529063883881895,
+          "blocks": [
+            "body/1"
+          ]
+        },
+        {
+          "source": "a-en",
+          "ordinal": 0,
+          "score": 0.4722918394730888,
+          "blocks": [
+            "body/0"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unsupported-identifier",
+      "query": "REACTOR-RAD-999",
+      "mode": "literal",
+      "project": null,
+      "revision": null,
+      "expectedSources": [],
+      "expectedBlocks": [],
+      "recallAt5": null,
+      "latencyMilliseconds": 0.1037,
+      "unsupportedReturnedChunks": 0,
+      "returned": []
+    }
+  ]
+}

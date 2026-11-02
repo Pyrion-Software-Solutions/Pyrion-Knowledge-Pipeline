@@ -20,9 +20,11 @@ public abstract class WorkbenchPage : ComponentBase, IDisposable
         try { await action(operation.Token); }
         catch (PreparationException ex) { Error = ex.Message; }
         catch (OperationCanceledException) { if (!Lifetime.IsCancellationRequested) Notice = "Operation canceled. No new approval was saved."; }
+        catch (System.Data.Common.DbException) { Error = "The knowledge database operation failed. Check its local connection and schema, then retry. Source documents were not changed."; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { Error = "The local file could not be read or saved. Check available disk space and folder permissions, then reopen the document."; }
         catch (System.Text.DecoderFallbackException) { Error = "The rules file is not valid text. Save it as UTF-8 and retry."; }
+        catch (ArgumentException ex) { Error = ex.Message; }
         finally { operation.Dispose(); operation = null; Busy = false; }
     }
 

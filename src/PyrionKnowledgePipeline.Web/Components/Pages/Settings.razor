@@ -6,6 +6,7 @@
 <PageTitle>LM Studio Settings · Pyrion</PageTitle>
 <div class="page-heading"><div><h1>LM Studio Settings</h1><p>Connect to a model running on this computer.</p></div></div>
 <Feedback Error="@Error" Notice="@Notice" />
+<p>For search embeddings and chunk settings, open <a href="/settings/indexing">Indexing Settings</a>.</p>
 <div class="settings-layout">
     <section class="form-panel" aria-labelledby="connection-title">
         <h2 id="connection-title">Local connection</h2>
@@ -55,7 +56,8 @@
     private Task SaveAsync() => RunAsync(async ct =>
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new PreparationException("Test the connection and select a chat model before saving.");
-        await SettingsStore.SaveAsync(new(baseUrl.Trim().TrimEnd('/'), modelId, timeout), ct);
+        var existing = await SettingsStore.LoadAsync(ct);
+        await SettingsStore.SaveAsync(existing with { BaseUrl = baseUrl.Trim().TrimEnd('/'), ModelId = modelId, TimeoutSeconds = timeout }, ct);
         Notice = "Settings saved on this computer. You can now prepare a document.";
     });
 }

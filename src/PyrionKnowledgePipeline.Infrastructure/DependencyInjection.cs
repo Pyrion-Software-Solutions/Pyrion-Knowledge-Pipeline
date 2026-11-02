@@ -17,6 +17,15 @@ public static class DependencyInjection
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseProxy = false });
         services.AddTransient<ILmStudioClient, LmStudioClient>();
         services.AddTransient<PreparationWorkflow>();
+        services.AddSingleton<IApprovedDocumentProvider, ApprovedDocumentProvider>();
+        services.AddSingleton<IChunkingService, StructureAwareChunker>();
+        services.AddSingleton<IEmbeddingProvider, LmStudioEmbeddingProvider>();
+        services.AddSingleton<KnowledgeDbFactory>();
+        services.AddSingleton<IKnowledgeRepository, KnowledgeRepository>();
+        services.AddSingleton<KnowledgeIndexService>();
+        services.AddSingleton<IKnowledgeIndexService>(provider => provider.GetRequiredService<KnowledgeIndexService>());
+        services.AddHostedService(provider => provider.GetRequiredService<KnowledgeIndexService>());
+        services.AddTransient<IKnowledgeRetrievalService, KnowledgeRetrievalService>();
         return services;
     }
 }

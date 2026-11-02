@@ -20,6 +20,9 @@ public class WebIntegrationTests
         Assert.Contains("Your document workspace", await http.GetStringAsync("/"));
         Assert.Contains("Test connection", await http.GetStringAsync("/settings"));
         Assert.Contains("Upload &amp; extract DOCX", await http.GetStringAsync("/preparation"));
+        Assert.Contains("Knowledge Index", await http.GetStringAsync("/knowledge-index"));
+        Assert.Contains("Retrieval Test", await http.GetStringAsync("/retrieval-test"));
+        Assert.Contains("Indexing Settings", await http.GetStringAsync("/settings/indexing"));
         Assert.Equal(Fixture.Docx, await http.GetByteArrayAsync("/samples/engineering-review.docx"));
         await factory.Services.GetRequiredService<ISettingsStore>().SaveAsync(new(ModelId: "test-model"), default);
         var workflow = factory.Services.GetRequiredService<PreparationWorkflow>();
@@ -55,6 +58,7 @@ public class WebIntegrationTests
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseSetting("Storage:RootPath", root);
+            builder.UseSetting("ConnectionStrings:KnowledgeIndex", "");
             builder.ConfigureServices(services => { services.RemoveAll<ILmStudioClient>(); services.AddSingleton<ILmStudioClient, MockLmStudio>(); });
         }
     }

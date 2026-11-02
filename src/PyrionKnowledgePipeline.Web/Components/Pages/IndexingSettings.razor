@@ -1,0 +1,81 @@
+@page "/settings/indexing"
+@inherits WorkbenchPage
+@inject ISettingsStore SettingsStore
+@inject IEmbeddingProvider Embeddings
+@inject IKnowledgeRepository Repository
+
+<PageTitle>Indexing Settings · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>Indexing Settings</h1><p>Configure local embeddings and explainable retrieval chunks.</p></div><a href="/settings">Chat model settings</a></div>
+<Feedback Error="@Error" Notice="@Notice" />
+<div class="settings-layout">
+    <section class="form-panel" aria-labelledby="embedding-title">
+        <h2 id="embedding-title">Embedding model</h2>
+        <fieldset disabled="@Busy">
+            <p class="field-help">Uses the local API URL saved in <a href="/settings">LM Studio Settings</a>: @saved.BaseUrl</p>
+            <button class="button secondary" @onclick="DiscoverAsync">Discover embedding models</button>
+            <div class="field-group"><label for="embedding-model">Embedding-capable model</label><select id="embedding-model" @bind="modelId">
+                <option value="">Select an embedding model</option>
+                @if (!string.IsNullOrWhiteSpace(modelId) && !models.Any(x => x.Id == modelId)) { <option value="@modelId">@modelId (saved; refresh to validate)</option> }
+                @foreach (var model in models) { <option value="@model.Id">@model.Id · context @model.ContextTokens</option> }
+            </select></div>
+            <label for="embedding-version">Local model artifact / version identity</label><input id="embedding-version" @bind="modelVersion" @bind:event="oninput" maxlength="200" />
+            <p class="field-help">Record the local model file checksum or an explicit version label. Change it whenever the model file, quantization or runtime configuration changes. A response probe detects some changes; it cannot prove file identity.</p>
+            <div class="form-grid">
+                <div><label for="embedding-batch">Batch size</label><input id="embedding-batch" type="number" min="1" max="32" @bind="batchSize" /></div>
+                <div><label for="embedding-timeout">Timeout (seconds)</label><input id="embedding-timeout" type="number" min="5" max="600" @bind="embeddingTimeout" /></div>
+                <div><label for="embedding-context">Model context limit (tokens)</label><input id="embedding-context" type="number" min="128" max="32768" @bind="contextTokens" /></div>
+            </div>
+            <label for="document-prefix">Document prefix (model-specific)</label><input id="document-prefix" @bind="documentPrefix" @bind:event="oninput" maxlength="1000" />
+            <label for="query-prefix">Query prefix (model-specific)</label><input id="query-prefix" @bind="queryPrefix" @bind:event="oninput" maxlength="1000" />
+            <h2 class="settings-subheading">Chunk boundaries</h2>
+            <p class="field-help">Experiment with 300, 500 or 1,000 tokens. Counts use a Unicode estimate, not the model tokenizer. Prefixes and heading context consume the model budget too.</p>
+            <div class="form-grid">
+                <div><label for="chunk-target">Target tokens</label><input id="chunk-target" type="number" min="100" max="2000" @bind="target" /></div>
+                <div><label for="chunk-maximum">Maximum tokens</label><input id="chunk-maximum" type="number" min="100" max="4000" @bind="maximum" /></div>
+                <div><label for="chunk-overlap">Overlap tokens</label><input id="chunk-overlap" type="number" min="0" max="500" @bind="overlap" /></div>
+            </div>
+            <div class="actions"><button class="button primary" @onclick="SaveAsync">Save indexing settings</button><button class="button secondary" @onclick="ValidateAsync">Validate saved model</button></div>
+        </fieldset>
+        @if (Busy) { <p role="status">Checking the local service…</p><button class="button secondary" @onclick="Cancel">Cancel check</button> }
+        @if (validation is not null) { <p class="connection-state" role="status">@validation.ModelId · @validation.Dimensions dimensions · cosine distance</p> }
+    </section>
+    <aside class="help-panel">
+        <h2>Knowledge database</h2><p role="status">@health.Message</p>
+        <p>Configure <code>ConnectionStrings__KnowledgeIndex</code> privately, using a local PostgreSQL database. The database needs the pgvector extension files before initialization.</p>
+        <div class="actions"><button class="button secondary" disabled="@Busy" @onclick="CheckDatabaseAsync">Check database</button><button class="button secondary" disabled="@Busy" @onclick="MigrateAsync">Initialize / update index database</button></div>
+        <h2 class="settings-subheading">Before indexing</h2><p>Validate the embedding model with a bilingual sample. Evaluate Persian and English retrieval before choosing a model for engineering documents.</p>
+        <p>Changed chunk or embedding settings require a new generation. Existing active generations stay available to literal search.</p>
+        <a href="/knowledge-index">Open Knowledge Index</a>
+    </aside>
+</div>
+
+@code {
+    private LmStudioSettings saved = new();
+    private IReadOnlyList<EmbeddingModel> models = [];
+    private string? modelId;
+    private string modelVersion = "", documentPrefix = "", queryPrefix = "";
+    private int batchSize = 8, embeddingTimeout = 180, contextTokens = 2048, target = 500, maximum = 750, overlap = 40;
+    private EmbeddingSpace? validation;
+    private IndexHealth health = new(false, "Database has not been checked.");
+    protected override Task OnInitializedAsync() => RunAsync(async ct =>
+    {
+        saved = await SettingsStore.LoadAsync(ct);
+        var e = saved.Embedding ?? new(); var c = saved.Chunking ?? new();
+        modelId = e.ModelId; modelVersion = e.ModelVersion; batchSize = e.BatchSize; embeddingTimeout = e.TimeoutSeconds;
+        contextTokens = e.ContextTokens; documentPrefix = e.DocumentPrefix; queryPrefix = e.QueryPrefix;
+        target = c.TargetTokens; maximum = c.MaximumTokens; overlap = c.OverlapTokens;
+        health = await Repository.HealthAsync(ct);
+    });
+    private Task DiscoverAsync() => RunAsync(async ct => { models = (await Embeddings.GetModelsAsync(await SettingsStore.LoadAsync(ct), ct)).Where(x => x.Type == "embedding").ToList(); Notice = $"Found {models.Count} embedding model(s)."; });
+    private Task SaveAsync() => RunAsync(async ct =>
+    {
+        var e = new EmbeddingSettings(modelId, modelVersion.Trim(), batchSize, embeddingTimeout, documentPrefix, queryPrefix, contextTokens);
+        saved = await SettingsStore.LoadAsync(ct);
+        e.Validate(); var c = new ChunkingSettings(target, maximum, overlap, saved.Chunking?.TableHeaderRows); c.Validate();
+        saved = saved with { Embedding = e, Chunking = c };
+        await SettingsStore.SaveAsync(saved, ct); validation = null; Notice = "Indexing settings saved. Validate the saved model before indexing.";
+    });
+    private Task ValidateAsync() => RunAsync(async ct => { validation = await Embeddings.ValidateAsync(await SettingsStore.LoadAsync(ct), ct); Notice = "Bilingual embedding probe passed. Retrieval quality still requires evaluation."; });
+    private Task CheckDatabaseAsync() => RunAsync(async ct => health = await Repository.HealthAsync(ct));
+    private Task MigrateAsync() => RunAsync(async ct => { await Repository.MigrateAsync(ct); health = await Repository.HealthAsync(ct); Notice = health.Message; });
+}

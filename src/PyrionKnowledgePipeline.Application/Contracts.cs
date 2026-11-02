@@ -16,7 +16,8 @@ public static class DocumentJson
 
 public sealed class PreparationException(string message) : Exception(message);
 public sealed record LocalModel(string Id);
-public sealed record LmStudioSettings(string BaseUrl = "http://localhost:1234/v1", string? ModelId = null, int TimeoutSeconds = 180);
+public sealed record LmStudioSettings(string BaseUrl = "http://localhost:1234/v1", string? ModelId = null, int TimeoutSeconds = 180,
+    EmbeddingSettings? Embedding = null, ChunkingSettings? Chunking = null);
 
 public interface IDocumentParser
 {

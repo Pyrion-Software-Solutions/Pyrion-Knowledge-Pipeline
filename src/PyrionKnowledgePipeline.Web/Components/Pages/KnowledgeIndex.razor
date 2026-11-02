@@ -1,0 +1,123 @@
+@page "/knowledge-index"
+@inherits WorkbenchPage
+@inject IDocumentStore Documents
+@inject IApprovedDocumentProvider Sources
+@inject IKnowledgeIndexService Indexer
+@inject IKnowledgeRepository Repository
+@inject ISettingsStore SettingsStore
+
+<PageTitle>Knowledge Index · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>Knowledge Index</h1><p>Build a local search index from explicitly approved documents.</p></div><a class="button secondary" href="/settings/indexing">Indexing settings</a></div>
+<Feedback Error="@Error" Notice="@Notice" />
+@if (!health.Available) { <div class="feedback warning" role="status"><p>@health.Message</p><a href="/settings/indexing">Configure the knowledge database</a></div> }
+<div class="section-heading"><h2>Approved sources</h2><button class="button secondary" disabled="@Busy" @onclick="RefreshAsync">Refresh status</button></div>
+@if (approved.Count == 0) { <div class="empty-report"><p>No approved sources are available. Review and approve a document in Document Preparation before indexing.</p><a href="/preparation">Prepare a document</a></div> }
+@foreach (var doc in approved)
+{
+    var latest = runs.FirstOrDefault(x => x.SourceDocumentId == doc.Id);
+    var active = runs.FirstOrDefault(x => x.SourceDocumentId == doc.Id && x.Active);
+    var working = latest?.Status is IndexRunStatus.Pending or IndexRunStatus.Running;
+    <article class="index-source" aria-labelledby="@($"source-{doc.Id}")">
+        <div class="section-heading"><div><h3 id="@($"source-{doc.Id}")" dir="auto">@doc.Title</h3><p>@doc.DocumentNumber · revision @doc.Revision · <strong>@Label(doc.Id, latest, active)</strong></p></div><a href="@($"/preparation/{doc.Id}")">Open approved review</a></div>
+        @if (latest is not null)
+        {
+            <p class="field-help">@latest.CompletedChunks / @latest.TotalChunks chunks · @(latest.ModelId ?? "Model pending") · @(latest.Dimensions?.ToString() ?? "—") dimensions · @latest.StartedAt.ToLocalTime().ToString("g")</p>
+            @if (working) { <progress value="@latest.CompletedChunks" max="@(Math.Max(1, latest.TotalChunks))" aria-label="Indexing progress"></progress> }
+            @if (latest.Error is not null) { <p class="index-error" role="status">@latest.Error</p> }
+        }
+        <div class="actions">
+            <button class="button secondary" disabled="@Busy" @onclick="() => PreviewAsync(doc.Id)">Preview chunks</button>
+            <button class="button primary" disabled="@(Busy || !health.Available || working)" @onclick="() => StartAsync(doc.Id, false)">Index approved document</button>
+            @if (latest is not null) { <button class="button secondary" disabled="@(Busy || !health.Available || working)" @onclick="() => StartAsync(doc.Id, true)">Reindex</button> }
+            @if (latest?.Status == IndexRunStatus.Completed && !latest.Active) { <button class="button secondary" disabled="@Busy" @onclick="() => ActivateAsync(latest)">Use this revision for search</button> }
+            @if (working) { <button class="button secondary" @onclick="() => CancelRun(doc.Id)">Cancel indexing</button> }
+        </div>
+    </article>
+}
+<p class="field-help">Indexing a new revision does not replace the authoritative revision automatically. After a successful index, select “Use this revision for search”. Reindexing an active source safely replaces its generation after completion.</p>
+@if (preview is not null)
+{
+    <section class="preview-section" aria-labelledby="chunks-title">
+        <div class="section-heading"><h2 id="chunks-title">Chunk preview · @preview.Chunks.Count chunks</h2><button class="button secondary" @onclick="() => preview = null">Close preview</button></div>
+        <p class="field-help">@ChunkingSettings.TokenMethod. @ChunkingSettings.Version. Source spans use UTF-16 offsets in the unchanged approved text.</p>
+        @if (tables.Count > 0)
+        {
+            <details><summary>Designate table headers</summary><p>Header rows are not identified by the approved contract. Enter only the header count you have verified. These are derived index settings.</p>
+                @foreach (var table in tables) { <label for="@($"header-{table.SourceReference}")">@table.SourceReference</label><input id="@($"header-{table.SourceReference}")" type="number" min="0" max="@(Math.Min(20, table.Rows!.Count - 1))" @bind="headerCounts[table.SourceReference]" /> }
+                <button class="button secondary" disabled="@Busy" @onclick="SaveHeadersAsync">Save header choices and rebuild preview</button>
+            </details>
+        }
+        @if (preview.CoverageNotes.Count > 0) { <div class="feedback warning"><h3>Coverage notes</h3><ul>@foreach (var note in preview.CoverageNotes) { <li>@note</li> }</ul></div> }
+        @foreach (var chunk in preview.Chunks)
+        {
+            <article class="retrieval-result"><h3>Chunk @(chunk.Ordinal + 1) · @chunk.ContentType · ~@chunk.EstimatedTokens tokens</h3><p dir="auto">@string.Join(" / ", chunk.HeadingPath)</p><p class="document-text" dir="auto">@chunk.DisplayText</p>
+                <details><summary>Source spans and embedded context</summary><pre class="source-excerpt" dir="auto">@chunk.EmbeddingText</pre>@foreach (var span in chunk.Sources) { <span class="block-reference">@span.SourceReference · offset @span.Start + @span.Length @(span.ContextOnly ? "(repeated context)" : "")</span> }</details>
+            </article>
+        }
+    </section>
+}
+
+@code {
+    private IReadOnlyList<DocumentSummary> approved = [];
+    private IReadOnlyList<IndexRun> runs = [];
+    private IndexHealth health = new(false, "Checking database…");
+    private ChunkPreview? preview;
+    private Guid previewId;
+    private List<DocumentBlock> tables = [];
+    private Dictionary<string, int> headerCounts = [];
+    private Dictionary<Guid, bool> outdated = [];
+    protected override async Task OnInitializedAsync() { await RefreshAsync(); _ = PollAsync(); }
+    private Task RefreshAsync() => RunAsync(async ct => await LoadAsync(ct));
+    private async Task LoadAsync(CancellationToken ct)
+    {
+        approved = (await Documents.ListAsync(ct)).Where(x => x.Status == ReviewStatus.Approved).ToList();
+        health = await Repository.HealthAsync(ct);
+        runs = health.Available ? await Repository.ListRunsAsync(ct) : [];
+        var settings = await SettingsStore.LoadAsync(ct);
+        foreach (var doc in approved)
+        {
+            var current = runs.FirstOrDefault(x => x.SourceDocumentId == doc.Id && x.Active);
+            if (current is null) continue;
+            try
+            {
+                var source = await Sources.LoadAsync(doc.Id, ct);
+                outdated[doc.Id] = source.ArtifactHash != current.ArtifactHash ||
+                    current.SettingsFingerprint != KnowledgeHash.Of($"{(settings.Chunking ?? new()).Fingerprint}|{current.SpaceFingerprint}") ||
+                    current.EmbeddingConfigurationFingerprint != PyrionKnowledgePipeline.Infrastructure.LmStudioEmbeddingProvider.ConfigurationFingerprint(settings);
+            }
+            catch (PreparationException) { outdated[doc.Id] = true; }
+        }
+    }
+    private string Label(Guid id, IndexRun? latest, IndexRun? active) => latest?.Status is IndexRunStatus.Pending or IndexRunStatus.Running ? "Indexing" :
+        latest?.Status is IndexRunStatus.Failed or IndexRunStatus.Cancelled ? latest.Status.ToString() + (active is null ? "" : " · prior index active") :
+        active is not null ? (outdated.GetValueOrDefault(id) ? "Outdated · reindex with current settings" : "Indexed") : latest?.Status == IndexRunStatus.Completed ? "Indexed · inactive revision" : "Not indexed";
+    private Task PreviewAsync(Guid id) => RunAsync(async ct =>
+    {
+        preview = await Indexer.PreviewAsync(id, ct); previewId = id;
+        tables = (await Sources.LoadAsync(id, ct)).Document.Blocks.Where(x => x.Type == BlockType.Table).ToList();
+        var settings = await SettingsStore.LoadAsync(ct);
+        headerCounts = tables.ToDictionary(x => x.SourceReference, x => settings.Chunking?.TableHeaderRows?.GetValueOrDefault($"{id:N}:{x.SourceReference}") ?? 0);
+    });
+    private Task SaveHeadersAsync() => RunAsync(async ct =>
+    {
+        var settings = await SettingsStore.LoadAsync(ct);
+        var allHeaders = new Dictionary<string, int>(settings.Chunking?.TableHeaderRows ?? []);
+        foreach (var pair in headerCounts) allHeaders[$"{previewId:N}:{pair.Key}"] = pair.Value;
+        await SettingsStore.SaveAsync(settings with { Chunking = (settings.Chunking ?? new()) with { TableHeaderRows = allHeaders } }, ct);
+        preview = await Indexer.PreviewAsync(previewId, ct); Notice = "Header choices saved; chunks rebuilt. Existing indexes require reindexing.";
+    });
+    private Task StartAsync(Guid id, bool force) => RunAsync(async ct => { var run = await Indexer.StartAsync(new(id, Force: force), ct); Notice = $"Index run {run:N} accepted. A completed unchanged generation is reused."; await LoadAsync(ct); });
+    private Task ActivateAsync(IndexRun run) => RunAsync(async ct =>
+    {
+        if ((await Sources.LoadAsync(run.SourceDocumentId, ct)).ArtifactHash != run.ArtifactHash)
+            throw new PreparationException("This generation does not match the current approved source; activation was refused.");
+        await Repository.ActivateAsync(run.Id, ct); Notice = "Completed revision selected for search."; await LoadAsync(ct);
+    });
+    private void CancelRun(Guid id) { Notice = Indexer.Cancel(id) ? "Cancellation requested. Waiting for the current operation to stop." : "The run already finished; refresh status."; }
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        try { while (await timer.WaitForNextTickAsync(Lifetime.Token)) if (!Busy && health.Available) await InvokeAsync(async () => { await RefreshAsync(); StateHasChanged(); }); }
+        catch (OperationCanceledException) { }
+    }
+}

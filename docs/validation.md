@@ -1,5 +1,16 @@
 # Initial milestone validation
 
+## M2 validation — November 3, 2026
+
+- Full suite: 91 passed, zero failed, two explicit opt-in skips. All 61 original M1 tests remain included. Build has zero warnings/errors.
+- New automated coverage: raw v1.0/v1.1 approval validation/tampering, complete source/cell coverage, deterministic chunk IDs, headings/sections, Unicode offsets, oversized blocks/rows without truncation, embedding capabilities/count/indices/model/dimensions/invalid values/timeouts/retries, idempotency, cancellation and failed-reindex activation behavior, and new routes with PostgreSQL unconfigured.
+- EF model/migration consistency passed; an idempotent migration SQL script was generated successfully without connecting to a database.
+- Actual local LM Studio evaluation ran separately and passed its protocol/identity checks. The small synthetic set measured Recall@5 of 1.0 over nine supported queries; its unsupported semantic query returned five neighbors. This evaluates local embeddings plus in-memory cosine, not PostgreSQL or full-application latency. See [evaluation](retrieval-evaluation.md).
+- Browser checks used an isolated temporary source/settings directory. They exercised responsive M2 routes, actual embedding-model discovery, settings save and bilingual model validation, and actionable database-offline search feedback. Browser verification found and fixed query/settings text bindings before delivery.
+- PostgreSQL integration is explicitly skipped until `PYRION_TEST_DATABASE` is available. pgvector files were absent from the detected PostgreSQL 18 installation; database access required credentials. Migration execution, database constraints/rollback, vector-query filtering and the complete live indexing/restart demonstration remain unverified. These are prerequisites, not successful checks.
+
+The original M1 validation history follows.
+
 Validation performed on Windows on November 1, 2026, using .NET SDK 10.0.403 and .NET runtime 10.0.14.
 
 ## Automated checks

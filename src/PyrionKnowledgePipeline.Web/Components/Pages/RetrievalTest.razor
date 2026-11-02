@@ -1,0 +1,77 @@
+@page "/retrieval-test"
+@inherits WorkbenchPage
+@inject IKnowledgeRetrievalService Retrieval
+@inject IDocumentStore Documents
+@inject IApprovedDocumentProvider Sources
+@inject IKnowledgeRepository Repository
+
+<PageTitle>Retrieval Test · Pyrion</PageTitle>
+<div class="page-heading"><div><h1>Retrieval Test</h1><p>Find approved source text in Persian or English and inspect its exact references.</p></div><a href="/knowledge-index">Manage knowledge index</a></div>
+<Feedback Error="@Error" Notice="@Notice" />
+<section class="form-panel" aria-labelledby="search-title">
+    <h2 id="search-title">Search approved knowledge</h2>
+    <form @onsubmit="SearchAsync" @onsubmit:preventDefault>
+        <fieldset disabled="@Busy">
+            <label for="retrieval-query">Query or exact identifier</label><textarea id="retrieval-query" rows="3" maxlength="2000" dir="auto" @bind="query" @bind:event="oninput"></textarea>
+            <div class="form-grid">
+                <div><label for="retrieval-mode">Search mode</label><select id="retrieval-mode" @bind="mode"><option value="@RetrievalMode.Semantic">Semantic · local embedding model</option><option value="@RetrievalMode.Literal">Literal text / exact document number</option></select></div>
+                <div><label for="retrieval-project">Project</label><select id="retrieval-project" @bind="project" @bind:after="ProjectChanged"><option value="">All projects</option>@foreach (var item in metadata.Select(x => x.ProjectId).Distinct().Order()) { <option value="@item">@item</option> }</select></div>
+                <div><label for="retrieval-document">Approved source</label><select id="retrieval-document" @bind="documentId"><option value="">All active sources</option>@foreach (var item in metadata.Where(x => project == "" || x.ProjectId == project)) { <option value="@item.DocumentId.ToString()">@item.DocumentNumber · @item.Revision · @item.Title</option> }</select></div>
+                <div><label for="retrieval-number">Exact document number</label><input id="retrieval-number" maxlength="200" @bind="documentNumber" @bind:event="oninput" /></div>
+                <div><label for="retrieval-revision">Revision literal</label><select id="retrieval-revision" @bind="revision"><option value="">All selected authoritative revisions</option>@foreach (var item in metadata.Select(x => x.Revision).Distinct().Order()) { <option value="@item">@item</option> }</select></div>
+                <div><label for="retrieval-language">Language</label><select id="retrieval-language" @bind="language"><option value="">All languages</option><option value="fa">Persian</option><option value="en">English</option><option value="mixed">Mixed</option></select></div>
+                <div><label for="retrieval-topk">Top-K</label><input id="retrieval-topk" type="number" min="1" max="50" @bind="topK" /></div>
+                @if (mode == RetrievalMode.Semantic) { <div><label for="retrieval-threshold">Minimum cosine similarity (optional)</label><input id="retrieval-threshold" type="number" min="-1" max="1" step="0.01" @bind="threshold" /></div> }
+            </div>
+            <p class="field-help">Search covers explicitly active, completed revisions. Similarity is 1 − cosine distance, not confidence or proof of relevance. Literal search preserves Persian characters and uses case-insensitive substring matching; it performs no stemming or spelling normalization.</p>
+            <div class="actions"><button class="button primary" type="submit">Search sources</button><button class="button secondary" type="button" @onclick="ClearFilters">Clear filters</button></div>
+        </fieldset>
+    </form>
+    @if (Busy) { <p role="status">Searching local sources…</p><button class="button secondary" @onclick="Cancel">Cancel search</button> }
+</section>
+@if (response is not null)
+{
+    <div class="section-heading retrieval-heading"><h2>Retrieved sources</h2><p role="status">@response.Explanation · @response.ElapsedMilliseconds.ToString("F0") ms</p></div>
+    @foreach (var hit in response.Hits)
+    {
+        <article class="retrieval-result">
+            <div class="section-heading"><h3 dir="auto">@hit.Title</h3><span class="retrieval-score">@hit.Score.ToString("F4") · @hit.Metric</span></div>
+            <p class="result-metadata">@hit.ProjectId · @hit.DocumentNumber · revision @hit.Revision · @hit.Language</p>
+            <p dir="auto">@string.Join(" / ", hit.Chunk.HeadingPath)</p>
+            <p class="document-text" dir="auto">@hit.Chunk.DisplayText</p>
+            <details><summary>Exact source references and index metadata</summary>
+                <p class="field-help">@hit.ModelId · @hit.Dimensions dimensions · chunk @(hit.Chunk.Ordinal + 1) · @hit.Chunk.Id</p>
+                @foreach (var span in hit.Chunk.Sources) { <span class="block-reference">@span.SourceReference · UTF-16 offset @span.Start + @span.Length @(span.ContextOnly ? "(context)" : "")</span> }
+            </details>
+            @if (hit.Warnings.Count > 0) { <div class="feedback warning"><h4>Extraction coverage</h4><ul>@foreach (var warning in hit.Warnings) { <li>@warning</li> }</ul></div> }
+            <a href="@($"/preparation/{hit.SourceDocumentId}")">Open approved source review</a>
+        </article>
+    }
+}
+
+@code {
+    private string query = "", project = "", documentId = "", documentNumber = "", revision = "", language = "";
+    private RetrievalMode mode = RetrievalMode.Semantic;
+    private int topK = 5;
+    private double? threshold;
+    private RetrievalResponse? response;
+    private List<NormalizedDocument> metadata = [];
+    protected override Task OnInitializedAsync() => RunAsync(async ct =>
+    {
+        foreach (var doc in (await Documents.ListAsync(ct)).Where(x => x.Status == ReviewStatus.Approved))
+        {
+            try { metadata.Add((await Sources.LoadAsync(doc.Id, ct)).Document); }
+            catch (PreparationException) { Notice = "One or more approvals failed integrity validation and are unavailable for search. Check Knowledge Index and your source backup."; }
+        }
+        var health = await Repository.HealthAsync(ct);
+        if (!health.Available) Notice = health.Message;
+    });
+    private Task SearchAsync() => RunAsync(async ct =>
+    {
+        response = null;
+        response = await Retrieval.SearchAsync(new(query, mode, project, Guid.TryParse(documentId, out var id) ? id : null,
+            documentNumber, revision, language, topK, threshold), ct);
+    });
+    private void ClearFilters() { project = documentId = documentNumber = revision = language = ""; threshold = null; }
+    private void ProjectChanged() => documentId = "";
+}

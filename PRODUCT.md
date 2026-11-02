@@ -8,10 +8,10 @@ web
 C# / .NET 10, ASP.NET Core Blazor Interactive Server, Windows localhost.
 
 ## Users and purpose
-Engineering document reviewers prepare Persian and English documents for future knowledge retrieval. This first milestone extracts DOCX structure, obtains local AI suggestions, and requires explicit human approval before exporting normalized JSON.
+Engineering document reviewers prepare Persian and English documents, explicitly approve normalized JSON, and build a local index to retrieve source text with project, revision and block references. M1 covers DOCX extraction, local AI structural suggestions and human review; M2 adds approved knowledge indexing and retrieval testing.
 
 ## Confirmed constraints
-The user approved the initial milestone plan on November 1, 2026. Source wording and original uploads stay unchanged. LM Studio is the only model service; settings, documents and reviews stay on this computer. No database, RAG, embeddings, chunking, PDF or XLSX implementation in this milestone.
+The user approved M1 on November 1, 2026 and the M2 implementation plan on November 3, 2026. Source wording and original uploads stay unchanged. LM Studio is the only model service; content, embeddings and reviews stay on this computer. M2 uses optional local PostgreSQL/pgvector for derived retrieval data. Conversational RAG, generated answers, PDF/XLSX import and semantic cross-project deduplication remain outside M2.
 
 ## Operating context
 Upload, extract, analyze, review, approve, download. Review states must survive reopening. Original locations, suggested classifications and reasons must remain visible together.

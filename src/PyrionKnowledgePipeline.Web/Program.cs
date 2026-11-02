@@ -19,6 +19,8 @@ var storage = app.Services.GetRequiredService<IOptions<StorageOptions>>().Value;
 Directory.CreateDirectory(storage.RootPath);
 using var storageLease = new FileStream(Path.Combine(storage.RootPath, ".instance.lock"), FileMode.OpenOrCreate,
     FileAccess.ReadWrite, FileShare.None);
+// Release before host disposal completes, including in-process test hosts with background services.
+app.Lifetime.ApplicationStopped.Register(storageLease.Dispose);
 
 app.Use(async (context, next) =>
 {

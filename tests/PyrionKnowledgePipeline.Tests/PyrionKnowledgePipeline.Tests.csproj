@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <None Update="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\PyrionKnowledgePipeline.Web\Samples\engineering-review.docx" Link="Samples\engineering-review.docx" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

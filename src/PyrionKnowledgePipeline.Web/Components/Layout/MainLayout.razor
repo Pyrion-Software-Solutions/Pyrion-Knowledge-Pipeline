@@ -10,12 +10,15 @@
         <nav aria-label="Main navigation">
             <NavLink href="/" Match="NavLinkMatch.All">Dashboard</NavLink>
             <NavLink href="/preparation">Document Preparation</NavLink>
-            <NavLink href="/settings">LM Studio Settings</NavLink>
+            <NavLink href="/settings" Match="NavLinkMatch.All">LM Studio Settings</NavLink>
+            <NavLink href="/knowledge-index">Knowledge Index</NavLink>
+            <NavLink href="/retrieval-test">Retrieval Test</NavLink>
+            <NavLink href="/settings/indexing">Indexing Settings</NavLink>
         </nav>
         <div class="local-note"><span class="local-dot"></span> Local workspace<p>Documents stay on this computer.<br />Every final change needs your approval.</p></div>
     </aside>
     <main id="main" class="workspace">
-        <header class="workspace-bar"><span>Document preparation</span><span>Initial milestone · DOCX</span></header>
+        <header class="workspace-bar"><span>Local knowledge workspace</span><span>DOCX · Approved retrieval</span></header>
         <div class="page-content">@Body</div>
     </main>
 </div>

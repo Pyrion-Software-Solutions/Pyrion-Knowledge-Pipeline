@@ -1,0 +1,46 @@
+{
+  "description": "Synthetic, nonconfidential, manually labeled M2 retrieval fixtures. Engineering values are illustrative, not operating instructions.",
+  "sources": [
+    { "key": "a-en", "project": "Synthetic-A", "number": "SYN-PUMP-001", "revision": "B0", "language": "en", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "Hydrostatic acceptance" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "The pump hydrostatic acceptance test uses a pressure of 12 bar. Record the witnessed result against clause HT-12." },
+      { "sourceReference": "body/2", "type": "table", "text": "", "rows": [ { "cells": [{ "text": "Design temperature", "sourceReference": "body/2/row/0/cell/0" }, { "text": "85 °C", "sourceReference": "body/2/row/0/cell/1" }] } ] }
+    ] },
+    { "key": "b-en", "project": "Synthetic-B", "number": "SYN-PUMP-001", "revision": "01", "language": "en", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "Hydrostatic acceptance" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "The pump hydrostatic acceptance test uses a pressure of 18 bar. Record the witnessed result against clause HT-18." },
+      { "sourceReference": "body/2", "type": "paragraph", "text": "Verify tag P-202 before the cooling water pump starts." }
+    ] },
+    { "key": "a-fa", "project": "Synthetic-A", "number": "SYN-FA-002", "revision": "A", "language": "fa", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "پذیرش پمپ و آزمون فشار" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "فشار آزمون هیدرواستاتیک پمپ ۱۲ بار است. نتیجه آزمون باید با حضور بازرس ثبت شود." },
+      { "sourceReference": "body/2", "type": "heading", "headingLevel": 2, "text": "روانکاری پیش از راه‌اندازی" },
+      { "sourceReference": "body/3", "type": "paragraph", "text": "پیش از راه‌اندازی، سطح روغن یاتاقان بررسی شود و مقدار آن در گزارش بازرسی ثبت گردد." }
+    ] },
+    { "key": "b-fa", "project": "Synthetic-B", "number": "SYN-FA-002", "revision": "C", "language": "fa", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "پذیرش پمپ و آزمون فشار" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "فشار آزمون هیدرواستاتیک پمپ ۱۸ بار است. ثبت نتیجه آزمون با حضور بازرس الزامی است." }
+    ] },
+    { "key": "electrical", "project": "Synthetic-A", "number": "SYN-ELEC-003", "revision": "02", "language": "en", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "Motor electrical inspection" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "Inspect motor cable insulation and protective earth continuity before electrical energization. Clause EL-07 applies to the inspection record." }
+    ] },
+    { "key": "storage", "project": "Synthetic-C", "number": "SYN-STORE-004", "revision": "A0", "language": "mixed", "blocks": [
+      { "sourceReference": "body/0", "type": "heading", "headingLevel": 1, "text": "Warehouse storage / نگهداری انبار" },
+      { "sourceReference": "body/1", "type": "paragraph", "text": "Keep spare seals in dry indoor storage. قطعات یدکی آب‌بند در فضای خشک و سرپوشیده نگهداری شوند." }
+    ] }
+  ],
+  "queries": [
+    { "id": "en-paraphrase", "query": "How is the pump pressure proof test witnessed?", "mode": "semantic", "project": "Synthetic-A", "expectedSources": ["a-en"], "expectedBlocks": ["body/1"] },
+    { "id": "fa-paraphrase", "query": "بازرس هنگام آزمایش فشار پمپ چه چیزی را ثبت می‌کند؟", "mode": "semantic", "project": "Synthetic-A", "language": "fa", "expectedSources": ["a-fa"], "expectedBlocks": ["body/1"] },
+    { "id": "fa-lubrication", "query": "قبل از شروع کار دستگاه، روغن کدام بخش کنترل می‌شود؟", "mode": "semantic", "project": "Synthetic-A", "expectedSources": ["a-fa"], "expectedBlocks": ["body/3"] },
+    { "id": "project-b-context", "query": "pump pressure acceptance requirement", "mode": "semantic", "project": "Synthetic-B", "revision": "01", "expectedSources": ["b-en"], "expectedBlocks": ["body/1"] },
+    { "id": "table-fact", "query": "What is the specified pump design temperature?", "mode": "semantic", "project": "Synthetic-A", "expectedSources": ["a-en"], "expectedBlocks": ["body/2"] },
+    { "id": "heading-target", "query": "electrical checks before energizing the motor", "mode": "semantic", "expectedSources": ["electrical"], "expectedBlocks": ["body/0", "body/1"] },
+    { "id": "document-number", "query": "SYN-PUMP-001", "mode": "literal", "project": "Synthetic-A", "documentNumber": "SYN-PUMP-001", "expectedSources": ["a-en"], "expectedBlocks": ["body/1"] },
+    { "id": "clause-code", "query": "EL-07", "mode": "literal", "expectedSources": ["electrical"], "expectedBlocks": ["body/1"] },
+    { "id": "fa-literal", "query": "۱۸ بار", "mode": "literal", "project": "Synthetic-B", "expectedSources": ["b-fa"], "expectedBlocks": ["body/1"] },
+    { "id": "unsupported-semantic", "query": "What is the radiation shielding thickness for the reactor?", "mode": "semantic", "expectedSources": [], "expectedBlocks": [], "unsupported": true },
+    { "id": "unsupported-identifier", "query": "REACTOR-RAD-999", "mode": "literal", "expectedSources": [], "expectedBlocks": [], "unsupported": true }
+  ]
+}

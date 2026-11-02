@@ -2,6 +2,8 @@
 
 A Windows localhost application for preparing engineering documents in Persian and English. It extracts DOCX content deterministically, asks a local LM Studio model for structural suggestions, and produces a clearly marked JSON review draft. Approved normalized JSON requires explicit human approval.
 
+M2 adds an optional local PostgreSQL/pgvector knowledge index, structure-aware chunks, separate LM Studio embeddings, and source-only retrieval. Open **Indexing Settings**, **Knowledge Index**, and **Retrieval Test** from the sidebar. See [database/model setup, migrations, recovery and smoke tests](docs/knowledge-index-setup.md) and the [measured synthetic retrieval baseline](docs/retrieval-evaluation.md). M1 remains usable without PostgreSQL.
+
 ## Prerequisites
 
 - Windows with the .NET 10 SDK. This workspace was built with SDK 10.0.403.
@@ -76,6 +78,7 @@ Original files use generated document directories and a fixed internal filename.
 
 ## Contracts and boundaries
 
+- [Completed work and handoff summary](WORK_SUMMARY.md)
 - [Architecture](docs/architecture.md)
 - [Approved normalized JSON schema v1.0 / v1.1](src/PyrionKnowledgePipeline.Infrastructure/Schemas/normalized-document-v1.schema.json)
 - [Unapproved normalized draft schema v1.1](src/PyrionKnowledgePipeline.Infrastructure/Schemas/normalized-draft-v1.schema.json)
@@ -97,7 +100,7 @@ New exports use schema v1.1 and include `extractionWarnings`, so missing images,
 - Unsupported schema mode triggers one visible plain-JSON retry only for an explicit schema/format rejection. An invalid result for a large-document part is retried once visibly. If any part still fails, no partial draft is saved and the previous saved draft remains available. Analysis batches are temporary model requests, not retrieval chunks or an index.
 - The latest draft and any approved document persist; this milestone does not provide an audit log of every superseded draft or link separate uploads into a revision family. Rejected drafts cannot be approved until a new analysis creates a reviewable draft.
 - LM Studio authentication is not implemented; use a loopback server without API authentication for this milestone.
-- No XLSX/PDF parsing, background workers, database, chunking, embeddings, vector storage, search or chat.
+- No XLSX/PDF parsing, OCR, generated answers or chat. M2 indexing uses one bounded worker inside the existing Web host; PostgreSQL/pgvector and LM Studio embeddings are optional local dependencies for retrieval.
 
 ## Tests
 

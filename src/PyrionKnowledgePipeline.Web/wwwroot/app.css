@@ -926,3 +926,22 @@ h1:focus {
     scroll-behavior: auto !important;
   }
 }
+.index-source, .retrieval-result {
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line);
+}
+.index-source h3, .retrieval-result h3 { margin-bottom: 8px; }
+.retrieval-result .document-text { max-width: 75ch; margin: 20px 0; line-height: 1.85; }
+.retrieval-result details { margin: 20px 0; }
+.retrieval-result .feedback { margin: 20px 0; }
+.result-metadata { color: var(--muted); overflow-wrap: anywhere; }
+.retrieval-score { color: var(--teal-dark); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.retrieval-heading, .settings-subheading { margin-top: 36px; }
+.index-error { color: var(--error); }
+.index-source progress { width: 100%; max-width: 420px; accent-color: var(--teal); }
+input, textarea { caret-color: var(--teal); }
+::selection { background: var(--teal); color: var(--paper); }
+@media (max-width: 700px) {
+  .index-source .section-heading, .retrieval-result .section-heading { display: block; }
+  .retrieval-score { display: block; margin-top: 12px; }
+}

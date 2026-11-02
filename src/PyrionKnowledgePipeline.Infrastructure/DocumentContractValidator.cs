@@ -62,6 +62,8 @@ public sealed class DocumentContractValidator : IDocumentContractValidator
             ProposalIntegrity.ValidateClassification(block.Type, block.HeadingLevel);
             if ((block.Type == BlockType.Table) != (block.Rows is not null) || (block.Type == BlockType.Table && block.Text != ""))
                 throw new PreparationException("The normalized document contains an invalid table representation.");
+            if (block.Rows is { } rows && rows.SelectMany(x => x.Cells).Select(x => x.SourceReference).Distinct(StringComparer.Ordinal).Count() != rows.Sum(x => x.Cells.Count))
+                throw new PreparationException("The normalized table contains duplicate cell source references.");
         }
     }
 
