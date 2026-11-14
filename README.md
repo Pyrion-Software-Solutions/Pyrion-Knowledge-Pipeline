@@ -1,10 +1,15 @@
 # Pyrion Knowledge Pipeline
 
+[![CI](https://github.com/Pyrion-Software-Solutions/Pyrion-Knowledge-Pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/Pyrion-Software-Solutions/Pyrion-Knowledge-Pipeline/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A Windows localhost application for preparing engineering documents in Persian and English. It extracts DOCX content deterministically, asks a local LM Studio model for structural suggestions, and produces a clearly marked JSON review draft. Approved normalized JSON requires explicit human approval.
 
 M2 adds an optional local PostgreSQL/pgvector knowledge index, structure-aware chunks, separate LM Studio embeddings, and source-only retrieval. Open **Indexing Settings**, **Knowledge Index**, and **Retrieval Test** from the sidebar. See [database/model setup, migrations, recovery and smoke tests](docs/knowledge-index-setup.md) and the [measured synthetic retrieval baseline](docs/retrieval-evaluation.md). M1 remains usable without PostgreSQL.
 
 ## Prerequisites
+
+For a packaged Windows x64 build, check [published releases](https://github.com/Pyrion-Software-Solutions/Pyrion-Knowledge-Pipeline/releases) and follow the included [release instructions](docs/release-readme.md). If no release is available, use the source setup below. Packaged builds include .NET; local models and the optional database are installed separately.
 
 - Windows with the .NET 10 SDK. This workspace was built with SDK 10.0.403.
 - LM Studio installed with a chat-capable model and its local server running. Default URL: `http://localhost:1234/v1`.
@@ -111,3 +116,7 @@ Implementation references: [Blazor Interactive Server](https://learn.microsoft.c
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Contributing and maintenance
+
+Read the [contribution guide](CONTRIBUTING.md) for setup, tests, and pull request expectations. Use the [issue templates](https://github.com/Pyrion-Software-Solutions/Pyrion-Knowledge-Pipeline/issues/new/choose) for bugs and feature requests, and the [security policy](SECURITY.md) for private vulnerability reports. Maintainers can use the [release guide](docs/releases.md) to prepare a downloadable Windows draft release.
