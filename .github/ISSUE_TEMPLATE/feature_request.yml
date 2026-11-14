@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an improvement to the local document workflow.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and affected users
+      description: Explain the workflow and its current limitation without sharing private documents.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed improvement and alternatives
+    validations:
+      required: true
