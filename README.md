@@ -107,3 +107,7 @@ New exports use schema v1.1 and include `extractionWarnings`, so missing images,
 Automated unit and host-integration tests use a mocked LM Studio client or HTTP handler and isolated temporary storage. They do not require or alter the real LM Studio server. They exercise ordering and exact text, inherited headings, table references, file validation, schema and semantic validation, multi-request coverage and merging, failure handling, cancellation, manual revision, rejection, approval, stale writes, restart persistence, and distinct draft/approved JSON downloads.
 
 Implementation references: [Blazor Interactive Server](https://learn.microsoft.com/en-us/aspnet/core/blazor/components/render-modes?view=aspnetcore-10.0), [Open XML SDK](https://learn.microsoft.com/en-us/office/open-xml/word/overview), [LM Studio structured output](https://lmstudio.ai/docs/developer/openai-compat/structured-output), and [NJsonSchema](https://github.com/RicoSuter/NJsonSchema).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
